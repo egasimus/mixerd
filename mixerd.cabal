@@ -1,0 +1,13 @@
+Name:         mixerd
+Version:      0.0
+License-File: LICENSE
+Author:       Adam Avramov <fallenblood@gmail.com>
+Maintainer:   Adam Avramov <fallenblood@gmail.com>
+
+Build-Type:    Simple
+Cabal-Version: >=1.2
+
+Executable mixerd
+  Build-Depends: base, dbus
+  Main-Is:       Main.hs
+
