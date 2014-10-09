@@ -1,32 +1,54 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
+import Control.Error
+import Control.Monad
+import Control.Monad.Trans
 import Data.Maybe
 import DBus
 import DBus.Client
-import DBus.Socket
+import Mixer.PulseAudio
 
 
+main :: IO ()
 main = do
-    client <- connectSession
 
-    socketPath <- getPulseAddress client
-    case socketPath of
-        Nothing -> putStrLn "Can't find PulseAudio socket."
-        Just s  -> putStrLn $ "Connecting to PulseAudio at: " ++ s
+    -- Init connection to PulseAudio
+    sessionBus <- connectSession
+    socketPath <- pulseGetAddress sessionBus
+    pulseBus   <- pulseConnect socketPath
+
+    case pulseBus of
+        Nothing ->
+            putStrLn "Can't connect to PulseAudio over DBus."
+        Just _ -> do
+            pulseHandler <- addMatch sessionBus matchAny handlePulseSignal
+            putStrLn $ "Listening to PulseAudio over DBus at " ++ fromJust socketPath
+            _ <- mainLoop
+            removeMatch sessionBus pulseHandler
+            putStrLn "Disconnected from PulseAudio."
+
+    return ()
+
+    -- Main loop
+    {-mainLoop <- runEitherT $ forever $ do-}
+        {-lift . putStr $ "mixerd :( "-}
+        {-str <- lift getLine-}
+        {-processCommand str-}
+
+    {--- Exit handling-}
+    {-case mainLoop of-}
+        {-Left  a -> putStrLn "Goodbye."-}
+        {-Right a -> return ()-}
 
 
-getPulseAddress :: Client -> IO (Maybe String)
-getPulseAddress client = do
-    reply <- call_ client (methodCall "/org/pulseaudio/server_lookup1"
-                             "org.freedesktop.DBus.Properties"
-                             "Get")
-        { methodCallDestination = Just "org.PulseAudio1"
-        , methodCallBody        = [toVariant ("org.PulseAudio.ServerLookup1" :: String),
-                                   toVariant ("Address" :: String)]}
-    return $ (fromVariant =<< fromVariant ((methodReturnBody reply) !! 0))
+mainLoop :: IO (Either () a)
+mainLoop = runEitherT $ forever $ do
+    str <- lift getLine
+    when (str == "exit") $ left ()
 
 
-pulseConnect :: Maybe String -> Maybe (IO Socket)
-pulseConnect Nothing  = Nothing
-pulseConnect (Just s) = maybe Nothing (Just . open) $ parseAddress s
+handlePulseSignal :: Signal -> IO ()
+handlePulseSignal = print
+
+

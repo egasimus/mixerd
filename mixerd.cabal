@@ -1,13 +1,15 @@
 Name:         mixerd
 Version:      0.0
-License-File: LICENSE
+Category:     Audio, Music
+Synopsis:     Audio mixing daemon
+Description:  A centralized mixing desk for the Linux desktop
 Author:       Adam Avramov <fallenblood@gmail.com>
 Maintainer:   Adam Avramov <fallenblood@gmail.com>
+License-File: LICENSE
 
 Build-Type:    Simple
 Cabal-Version: >=1.2
 
 Executable mixerd
-  Build-Depends: base, dbus
+  Build-Depends: base, mtl, errors, dbus
   Main-Is:       Main.hs
-
