@@ -11,5 +11,15 @@ Build-Type:    Simple
 Cabal-Version: >=1.2
 
 Executable mixerd
-  Build-Depends: base, mtl, errors, dbus
   Main-Is:       Main.hs
+  Build-Depends: base
+               , binary
+               , bytestring
+               , cereal
+               , containers
+               , errors
+               , ghc-prim
+               , mtl
+               , network
+               , unix
+               , utf8-string
