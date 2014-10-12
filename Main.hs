@@ -3,15 +3,23 @@
 
 import Control.Concurrent
 import Control.Monad
-import Mixer.PulseAudio
+import Mixer
+import Mixer.Backend.PulseAudio
+import Mixer.UI.Console
 import System.Exit
 import System.Posix.Signals
 
 
 main :: IO ()
 main = do
-    myPid <- myThreadId
-    (pulsePid, pulseBus) <- pulseMixer
-    installHandler keyboardSignal (Catch (do killThread pulsePid; killThread myPid)) Nothing
-    forever $ threadDelay 10000
+    mainThreadId <- myThreadId
+    (pulseThreadId, pulseConnection) <- pulseMixer
+
+    let mixer = MixerInfo { mainThreadId    = mainThreadId
+                          , pulseThreadId   = pulseThreadId
+                          , pulseConnection = pulseConnection
+                          }
+
+    installHandler keyboardSignal (Catch (do killThread mainThreadId; killThread pulseThreadId)) Nothing
+    runConsole mixer
     return ()

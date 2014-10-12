@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 
-module Mixer.PulseAudio ( pulseMixer ) where
+module Mixer.Backend.PulseAudio ( pulseMixer ) where
 
 
 import           Control.Arrow
@@ -23,9 +23,8 @@ pulseMixer = do
     socketPath <- pulseGetAddress sessionBus
     (pid, con) <- pulseConnect socketPath
 
-    call con "org.PulseAudio.Core1" $ DBusCall
-        "/org/pulseaudio/core1"
-        "ListenForSignal"
+    call con "org.PulseAudio.Core1" $
+        DBusCall "/org/pulseaudio/core1" "ListenForSignal"
         (Just "org.PulseAudio.Core1")
         [ DBusString "org.PulseAudio.Core1.NewPlaybackStream"
         , DBusArray SigObjectPath [] ]
@@ -113,8 +112,8 @@ onNewPlaybackStream conn _ _ (body:_) = do
     return ()
 
 
-getStreamProperty conn stream prop = call conn "org.PulseAudio.Core1" $ DBusCall
-    stream "Get"
+getStreamProperty conn stream prop = call conn "org.PulseAudio.Core1" $
+    DBusCall stream "Get"
     (Just "org.freedesktop.DBus.Properties")
     [ DBusString "org.PulseAudio.Core1.Stream"
     , DBusString prop ]

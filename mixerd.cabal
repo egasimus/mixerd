@@ -19,6 +19,7 @@ Executable mixerd
                , containers
                , errors
                , ghc-prim
+               , haskeline
                , mtl
                , network
                , unix
