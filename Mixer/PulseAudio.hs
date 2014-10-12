@@ -26,7 +26,7 @@ pulseMixer = do
         "/org/pulseaudio/core1"
         "ListenForSignal"
         (Just "org.PulseAudio.Core1")
-        [ DBusString "NewPlaybackStream"
+        [ DBusString "org.PulseAudio.Core1.NewPlaybackStream"
         , DBusArray SigObjectPath [] ]
 
     registerSignal pulseBus "/org/pulseaudio/core1" $ calltableFromList
