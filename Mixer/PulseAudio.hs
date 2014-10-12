@@ -30,7 +30,7 @@ pulseMixer = do
         , DBusArray SigObjectPath [] ]
 
     registerSignal pulseBus "/org/pulseaudio/core1" $ calltableFromList
-        [ ("NewPlaybackStream", "org.PulseAudio.Core1", onNewPlaybackStream) ]
+        [ ("NewPlaybackStream", "org.PulseAudio.Core1", onNewPlaybackStream pulseBus) ]
 
     return pulseBus
 
@@ -50,9 +50,8 @@ pulseConnect :: ByteString -> IO DBusConnection
 pulseConnect s = do
     let (domain, flagstr) = second BC.tail $ BC.breakSubstring ":" s
     let flags = map (\x -> let (k:v:[]) = BC.split '=' x in (k,v)) $ BC.split ',' flagstr
-    let path = lookup "path" flags
-    case path of
-        Nothing -> error "No path found to PulseAudio socket :/"
+    case lookup "path" flags of
+        Nothing   -> error "No path found to PulseAudio socket :/"
         Just path -> do
             ctx <- connectUnix path >>= contextNew
             authenticateWithRealUID ctx
@@ -71,25 +70,36 @@ pulseMainLoop context = do
                 , connectionCallbacks       = callbacks
                 , connectionPaths           = callPaths
                 , connectionSignals         = signalPaths
-                , connectionDefaultCallback = pulseHandler
+                , connectionDefaultCallback = \_ -> return ()
                 , connectionMainLoop        = mainloopPid
                 , connectionSendLock        = sendLockVar
                 }
     pid <- forkIO (dispatcher con)
     putMVar mainloopPid pid
-    print pid
     return con
 
 
-pulseHandler :: DBusMessage -> IO ()
-pulseHandler msg = do
-    print msg
+onNewPlaybackStream :: DBusConnection -> Signalback
+onNewPlaybackStream conn _ _ (body:_) = do
+    let stream = (\(DBusObjectPath a) -> a) body
+    print $ (\(ObjectPath a) -> a) stream
+
+    _ <- forkIO $ do
+        let getP prop = do
+            p <- getStreamProperty conn stream prop
+            print p
+        mapM_ getP [ "Index"
+                   , "Driver"
+                   , "OwnerModule"
+                   , "Client"
+                   ]
+        return ()
+
     return ()
 
 
-onNewPlaybackStream :: Signalback
-onNewPlaybackStream bus sig body = do
-    print bus
-    print sig
-    print body
-    return ()
+getStreamProperty conn stream prop = call conn "org.PulseAudio.Core1" $ DBusCall
+    stream "Get"
+    (Just "org.freedesktop.DBus.Properties")
+    [ DBusString "org.PulseAudio.Core1.Stream"
+    , DBusString prop ]
